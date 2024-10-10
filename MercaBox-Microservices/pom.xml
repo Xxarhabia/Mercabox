@@ -18,6 +18,7 @@
     <module>microservice-gateway</module>
     <module>microservice-eureka</module>
     <module>microservice-config</module>
+    <module>microservice-user</module>
   </modules>
 
   <name>MercaBox-Microservices</name>

@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: msvc-user
+  datasource:
+    url: jdbc:postgresql://localhost:5432/mercabox_db?currentSchema=mercabox_schema
+    username: postgres
+    password: 12345
+    schema: merchantbox_schema
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+
+security:
+  jwt:
+    key: 98ba36905941c30d4fe13c7a84c2d91f1c02384f003e188ee601d4da76f22058
+    user: AUTH0JWT-SERVICE
+
