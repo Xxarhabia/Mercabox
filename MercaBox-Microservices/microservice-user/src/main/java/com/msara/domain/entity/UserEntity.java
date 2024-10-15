@@ -25,6 +25,8 @@ public class UserEntity {
     @Email
     private String email;
     private String password;
+    @Column(name = "verification_token")
+    private String verificationToken;
     private boolean accountNoExpired;
     private boolean accountNoLocked;
     private boolean credentialNoExpired;
