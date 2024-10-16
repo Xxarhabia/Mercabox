@@ -22,7 +22,7 @@ public class EmailService {
         mailSender.setHost(mailConfig.getHost());
         mailSender.setPort(mailConfig.getPort());
         mailSender.setUsername(mailConfig.getUsername());
-        mailSender.setPassword(mailSender.getPassword());
+        mailSender.setPassword(mailConfig.getPassword());
 
         Properties props = mailSender.getJavaMailProperties();
         props.put("mail.smtp.auth", mailConfig.isSmtpAuth());
@@ -32,13 +32,19 @@ public class EmailService {
     }
 
     public void sendEmail(String to, String subject, String body) {
-        JavaMailSender mailSender = getMailSender();
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(to);
-        message.setSubject(subject);
-        message.setText(body);
-        MailConfigEntity mailConfig = mailConfigService.getEmailConfig();
-        message.setFrom(mailConfig.getUsername());
-        mailSender.send(message);
+        try {
+            JavaMailSender mailSender = getMailSender();
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
+            MailConfigEntity mailConfig = mailConfigService.getEmailConfig();
+            message.setFrom(mailConfig.getUsername());
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.out.println("Error al enviar el correo: " + e.getMessage());
+            System.out.println("Causa del error: " + e.getCause());
+            e.printStackTrace();
+        }
     }
 }

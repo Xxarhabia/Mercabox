@@ -19,7 +19,7 @@ public class AdminRegisterController {
         try {
             return ResponseEntity.status(201).body(userDetailService.requestAdminRegister(authRegisterRequest));
         } catch (RuntimeException ex) {
-            return ResponseEntity.status(500).body(new AuthResponse(null, ex.getMessage(), null));
+            return ResponseEntity.status(500).body(new AuthResponse(null, ex.getMessage(), null, null));
         }
     }
 

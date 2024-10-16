@@ -10,15 +10,19 @@ import com.msara.service.EmailService;
 import com.msara.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 
 import java.util.*;
 
+@Service
 public class UserDetailServiceImpl implements UserDetailsService {
 
     @Autowired
@@ -62,7 +66,7 @@ public class UserDetailServiceImpl implements UserDetailsService {
         String confirmPassword = authRegisterRequest.confirmPassword();
         List<String> roles = authRegisterRequest.roleRequest().roleListName();
 
-        Set<RoleEntity> roleEntitySet = new HashSet<>(roleRepository.findRoleEntitiesByRoleEnum(roles));
+        Set<RoleEntity> roleEntitySet = new HashSet<>(roleRepository.findRoleEntitiesByRoleEnumIn(roles));
         if (roleEntitySet.isEmpty()) {
             throw new IllegalArgumentException("The roles specified does not exist");
         }
@@ -85,13 +89,26 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
         userRepository.save(newUser);
 
-        String verificationLink = "http://localhost:8090/users/verify?token=" + verificationToken;
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+
+        newUser.getRoles()
+                .forEach(role -> authorities.add(new SimpleGrantedAuthority("ROLE_".concat(role.getRoleEnum().name()))));
+
+        newUser.getRoles()
+                .stream()
+                .flatMap(role -> role.getPermissionList().stream())
+                .forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission.getName())));
+
+        Authentication authentication = new UsernamePasswordAuthenticationToken(newUser.getEmail(), newUser.getPassword(), authorities);
+        String authToken = jwtUtils.createToken(authentication);
+
+        String verificationLink = "http://localhost:8090/api/admin/verify?token=" + verificationToken;
         emailService.sendEmail(
                 newUser.getEmail(),
                 "Verifica tu correo",
                 "Por favor, verifica tu correo haciendo clic en el siguiente enlace: " + verificationLink);
 
-        return new AuthResponse(username, "Usuario a la espera de validacion", verificationToken);
+        return new AuthResponse(username, "Usuario a la espera de validacion", authToken, verificationToken);
     }
 
     public boolean verifyEmail(String token) {

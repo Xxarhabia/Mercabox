@@ -4,6 +4,8 @@ server:
 spring:
   application:
     name: msvc-user
+  config:
+    import: optional:configserver:http://localhost:8888
   datasource:
     url: jdbc:postgresql://localhost:5432/mercabox_db?currentSchema=mercabox_schema
     username: postgres
