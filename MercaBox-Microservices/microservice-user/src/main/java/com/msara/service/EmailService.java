@@ -2,9 +2,10 @@ package com.msara.service;
 
 import com.msara.domain.entity.MailConfigEntity;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.mail.javamail.MimeMessagePreparator;
 import org.springframework.stereotype.Service;
 
 import java.util.Properties;
@@ -14,6 +15,9 @@ public class EmailService {
 
     @Autowired
     private MailConfigService mailConfigService;
+
+    @Autowired
+    private JavaMailSender mailSender;
 
     private JavaMailSender getMailSender() {
         MailConfigEntity mailConfig = mailConfigService.getEmailConfig();
@@ -32,19 +36,33 @@ public class EmailService {
     }
 
     public void sendEmail(String to, String subject, String body) {
-        try {
-            JavaMailSender mailSender = getMailSender();
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(body);
-            MailConfigEntity mailConfig = mailConfigService.getEmailConfig();
-            message.setFrom(mailConfig.getUsername());
-            mailSender.send(message);
-        } catch (Exception e) {
-            System.out.println("Error al enviar el correo: " + e.getMessage());
-            System.out.println("Causa del error: " + e.getCause());
-            e.printStackTrace();
-        }
+//        try {
+//            JavaMailSender mailSender = getMailSender();
+//            SimpleMailMessage message = new SimpleMailMessage();
+//            message.setTo(to);
+//            message.setSubject(subject);
+//            message.setText(body);
+//            MailConfigEntity mailConfig = mailConfigService.getEmailConfig();
+//            message.setFrom(mailConfig.getUsername());
+//            mailSender.send(message);
+//        } catch (Exception e) {
+//            System.out.println("Error al enviar el correo: " + e.getMessage());
+//            System.out.println("Causa del error: " + e.getCause());
+//            e.printStackTrace();
+//        }
+        MimeMessagePreparator message = createMessage(to, subject, body);
+        mailSender.send(message);
+    }
+
+    private MimeMessagePreparator createMessage(String to, String subject, String text) {
+        MailConfigEntity mailConfig = mailConfigService.getEmailConfig();
+        System.out.println(mailConfig.getUsername());
+        return mimeMessage -> {
+            MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "");
+            helper.setTo(to);
+            helper.setFrom(mailConfig.getUsername());
+            helper.setSubject(subject);
+            helper.setText(text, true);
+        };
     }
 }
