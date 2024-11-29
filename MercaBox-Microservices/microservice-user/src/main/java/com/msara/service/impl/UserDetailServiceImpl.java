@@ -7,6 +7,7 @@ import com.msara.domain.entity.UserEntity;
 import com.msara.domain.repository.RoleRepository;
 import com.msara.domain.repository.UserRepository;
 import com.msara.service.EmailService;
+import com.msara.utils.AuthUtils;
 import com.msara.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -35,6 +36,8 @@ public class UserDetailServiceImpl implements UserDetailsService {
     private EmailService emailService;
     @Autowired
     private JwtUtils jwtUtils;
+    @Autowired
+    private AuthUtils authUtils;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -58,7 +61,7 @@ public class UserDetailServiceImpl implements UserDetailsService {
     }
 
     public AuthResponse requestAdminRegister(AuthRegisterRequest authRegisterRequest) {
-        String verificationToken = UUID.randomUUID().toString();
+        int verificationCode = authUtils.generateVerificationCode();
 
         String username = authRegisterRequest.username();
         String email = authRegisterRequest.email();
@@ -79,7 +82,7 @@ public class UserDetailServiceImpl implements UserDetailsService {
                 .username(username)
                 .email(email)
                 .password(passwordEncoder.encode(password))
-                .verificationToken(verificationToken)
+                .verificationCode(verificationCode)
                 .isEnabled(false)
                 .accountNoExpired(true)
                 .accountNoLocked(true)
@@ -102,22 +105,21 @@ public class UserDetailServiceImpl implements UserDetailsService {
         Authentication authentication = new UsernamePasswordAuthenticationToken(newUser.getEmail(), newUser.getPassword(), authorities);
         String authToken = jwtUtils.createToken(authentication);
 
-        String verificationLink = "http://localhost:8090/api/admin/verify?token=" + verificationToken;
         emailService.sendEmail(
                 newUser.getEmail(),
                 "Verifica tu correo",
-                "Por favor, verifica tu correo haciendo clic en el siguiente enlace: " + verificationLink);
+                "Por favor, introduzca el siguiente codigo: " + verificationCode);
 
-        return new AuthResponse(username, "Usuario a la espera de validacion", authToken, verificationToken);
+        return new AuthResponse(username, "Usuario a la espera de validacion", authToken, String.valueOf(verificationCode));
     }
 
     public boolean verifyEmail(String token) {
-        UserEntity user = userRepository.findByVerificationToken(token);
-        if(user != null && !user.isEnabled()) {
-            user.setEnabled(true);
-            user.setVerificationToken(null);
-            return true;
-        }
+//        UserEntity user = userRepository.findByVerificationToken(token);
+//        if(user != null && !user.isEnabled()) {
+//            user.setEnabled(true);
+//            user.setVerificationToken(null);
+//            return true;
+//        }
         return false;
     }
 

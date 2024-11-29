@@ -15,7 +15,7 @@ public class EmailService {
 
     @Autowired
     private JavaMailSender mailSender;
-    
+
     public void sendEmail(String to, String subject, String message) {
         MailConfigEntity mailConfig = mailConfigService.getEmailConfig();
         SimpleMailMessage mailMessage = new SimpleMailMessage();
