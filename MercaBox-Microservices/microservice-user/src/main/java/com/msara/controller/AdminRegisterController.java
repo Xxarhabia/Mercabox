@@ -1,6 +1,7 @@
 package com.msara.controller;
 
 import com.msara.controller.dto.request.AuthRegisterRequest;
+import com.msara.controller.dto.request.AuthVerifyUserRequest;
 import com.msara.controller.dto.response.AuthResponse;
 import com.msara.service.impl.UserDetailServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,9 +24,9 @@ public class AdminRegisterController {
         }
     }
 
-    @GetMapping("/verify")
-    public ResponseEntity<?> verifyEmail(@RequestParam String token) {
-        boolean isVerified = userDetailService.verifyEmail(token);
+    @PostMapping("/verify")
+    public ResponseEntity<?> verifyEmail(@RequestBody AuthVerifyUserRequest authVerifyUserRequest) {
+        boolean isVerified = userDetailService.verifyEmail(authVerifyUserRequest);
         if (isVerified) {
             return ResponseEntity.status(200).body("The user was successfully verified");
         } else {

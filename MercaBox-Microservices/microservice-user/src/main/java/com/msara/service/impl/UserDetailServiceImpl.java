@@ -1,6 +1,7 @@
 package com.msara.service.impl;
 
 import com.msara.controller.dto.request.AuthRegisterRequest;
+import com.msara.controller.dto.request.AuthVerifyUserRequest;
 import com.msara.controller.dto.response.AuthResponse;
 import com.msara.domain.entity.RoleEntity;
 import com.msara.domain.entity.UserEntity;
@@ -113,13 +114,13 @@ public class UserDetailServiceImpl implements UserDetailsService {
         return new AuthResponse(username, "Usuario a la espera de validacion", authToken, String.valueOf(verificationCode));
     }
 
-    public boolean verifyEmail(String token) {
-//        UserEntity user = userRepository.findByVerificationToken(token);
-//        if(user != null && !user.isEnabled()) {
-//            user.setEnabled(true);
-//            user.setVerificationToken(null);
-//            return true;
-//        }
+    public boolean verifyEmail(AuthVerifyUserRequest authVerifyUserRequest) {
+        UserEntity user = userRepository.findUserEntityByEmail(authVerifyUserRequest.email()).orElseThrow();
+        if (!user.isEnabled() && authVerifyUserRequest.verificationCode() == user.getVerificationCode()) {
+            user.setEnabled(true);
+            userRepository.save(user);
+            return true;
+        }
         return false;
     }
 
