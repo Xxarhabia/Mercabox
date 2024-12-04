@@ -1,15 +1,18 @@
 package com.msara.service.impl;
 
+import com.msara.config.RabbitMQConfig;
 import com.msara.controller.dto.request.AuthRegisterRequest;
 import com.msara.controller.dto.request.AuthVerifyUserRequest;
 import com.msara.controller.dto.response.AuthResponse;
 import com.msara.domain.entity.RoleEntity;
 import com.msara.domain.entity.UserEntity;
+import com.msara.domain.event.UserEvent;
 import com.msara.domain.repository.RoleRepository;
 import com.msara.domain.repository.UserRepository;
 import com.msara.service.EmailService;
 import com.msara.utils.AuthUtils;
 import com.msara.utils.JwtUtils;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -39,6 +42,8 @@ public class UserDetailServiceImpl implements UserDetailsService {
     private JwtUtils jwtUtils;
     @Autowired
     private AuthUtils authUtils;
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
@@ -92,6 +97,9 @@ public class UserDetailServiceImpl implements UserDetailsService {
                 .build();
 
         userRepository.save(newUser);
+
+        UserEvent event = new UserEvent(newUser.getId(), newUser.getUsername(), newUser.getEmail());
+        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, "usuario.creado", event);
 
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
 

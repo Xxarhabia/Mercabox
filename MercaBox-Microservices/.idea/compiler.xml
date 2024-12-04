@@ -10,12 +10,14 @@
         <module name="microservice-gateway" />
         <module name="microservice-user" />
         <module name="microservice-eureka" />
+        <module name="microservice-commerce" />
         <module name="microservice-config" />
       </profile>
     </annotationProcessing>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="microservice-commerce" options="-parameters" />
       <module name="microservice-config" options="-parameters" />
       <module name="microservice-eureka" options="-parameters" />
       <module name="microservice-gateway" options="-parameters" />
