@@ -1,9 +1,11 @@
 package com.msara.service.impl;
 
 import com.msara.config.RabbitMQConfig;
+import com.msara.controller.dto.request.AuthLoginRequest;
 import com.msara.controller.dto.request.AuthRegisterRequest;
 import com.msara.controller.dto.request.AuthVerifyUserRequest;
-import com.msara.controller.dto.response.AuthResponse;
+import com.msara.controller.dto.response.AuthLoginResponse;
+import com.msara.controller.dto.response.AuthRegisterResponse;
 import com.msara.domain.entity.RoleEntity;
 import com.msara.domain.entity.UserEntity;
 import com.msara.domain.event.UserEvent;
@@ -18,6 +20,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -47,8 +50,7 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserEntity userEntity = new UserEntity();
-        userRepository.findUserEntityByEmail(username).orElseThrow(() -> new RuntimeException("User not found"));
+        UserEntity userEntity = userRepository.findUserEntityByEmail(username).orElseThrow(() -> new RuntimeException("User not found"));
         List<SimpleGrantedAuthority> authorityList = new ArrayList<>();
 
         userEntity.getRoles()
@@ -66,7 +68,7 @@ public class UserDetailServiceImpl implements UserDetailsService {
                 authorityList);
     }
 
-    public AuthResponse requestAdminRegister(AuthRegisterRequest authRegisterRequest) {
+    public AuthRegisterResponse requestRegister(AuthRegisterRequest authRegisterRequest) {
         int verificationCode = authUtils.generateVerificationCode();
 
         String username = authRegisterRequest.username();
@@ -119,7 +121,7 @@ public class UserDetailServiceImpl implements UserDetailsService {
                 "Verifica tu correo",
                 "Por favor, introduzca el siguiente codigo: " + verificationCode);
 
-        return new AuthResponse(username, "Usuario a la espera de validacion", authToken, String.valueOf(verificationCode));
+        return new AuthRegisterResponse(username, "Usuario a la espera de validacion", authToken, String.valueOf(verificationCode));
     }
 
     public boolean verifyEmail(AuthVerifyUserRequest authVerifyUserRequest) {
@@ -130,6 +132,28 @@ public class UserDetailServiceImpl implements UserDetailsService {
             return true;
         }
         return false;
+    }
+
+    public AuthLoginResponse loginRequest(AuthLoginRequest authLoginRequest) {
+        String email = authLoginRequest.email();
+        String password = authLoginRequest.password();
+
+        Authentication authentication = authentication(email, password);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
+        String accessToken = jwtUtils.createToken(authentication);
+        return new AuthLoginResponse(email, "User logged successfully", accessToken);
+    }
+
+    public Authentication authentication(String email, String password) {
+        UserDetails userDetails = loadUserByUsername(email);
+        if(userDetails == null) {
+            throw new BadCredentialsException("Invalid email or password");
+        }
+        if (!passwordEncoder.matches(password, userDetails.getPassword())) {
+            throw new BadCredentialsException("Incorrect Password");
+        }
+        return new UsernamePasswordAuthenticationToken(email, password, userDetails.getAuthorities());
     }
 
 }
