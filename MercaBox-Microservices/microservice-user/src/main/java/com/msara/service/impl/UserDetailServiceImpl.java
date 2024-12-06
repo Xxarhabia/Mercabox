@@ -100,8 +100,8 @@ public class UserDetailServiceImpl implements UserDetailsService {
 
         userRepository.save(newUser);
 
-        UserEvent event = new UserEvent(newUser.getId(), newUser.getUsername(), newUser.getEmail());
-        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, "usuario.creado", event);
+//        UserEvent event = new UserEvent(newUser.getId(), newUser.getUsername(), newUser.getEmail());
+//        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_NAME, "usuario.creado", event);
 
         List<SimpleGrantedAuthority> authorities = new ArrayList<>();
 
@@ -135,14 +135,18 @@ public class UserDetailServiceImpl implements UserDetailsService {
     }
 
     public AuthLoginResponse loginRequest(AuthLoginRequest authLoginRequest) {
-        String email = authLoginRequest.email();
-        String password = authLoginRequest.password();
+        UserEntity user = userRepository.findUserEntityByEmail(authLoginRequest.email()).orElseThrow(
+                () -> new RuntimeException("User not found"));
 
-        Authentication authentication = authentication(email, password);
+        if (!user.isEnabled()) {
+            throw new RuntimeException("User not enabled");
+        }
+
+        Authentication authentication = authentication(authLoginRequest.email(), authLoginRequest.password());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         String accessToken = jwtUtils.createToken(authentication);
-        return new AuthLoginResponse(email, "User logged successfully", accessToken);
+        return new AuthLoginResponse(authLoginRequest.email(), "User logged successfully", accessToken);
     }
 
     public Authentication authentication(String email, String password) {
